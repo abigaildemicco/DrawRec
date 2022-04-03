@@ -18,7 +18,6 @@ class ViewController: UIViewController, PKCanvasViewDelegate, PKToolPickerObserv
     
     @IBOutlet weak var recNum: UILabel!
     
-    let canvasWidth: CGFloat = 414
     let context = CIContext()
     var pixelBuffer: CVPixelBuffer?
     var requests = [VNRequest]() // holds Image Classification Request
