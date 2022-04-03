@@ -7,75 +7,65 @@
 
 import UIKit
 import PencilKit
-import PhotosUI
 import Vision
-import CoreML
 
 class ViewController: UIViewController, PKCanvasViewDelegate, PKToolPickerObserver {
     
-    @IBOutlet weak var pencilFingerButton: UIBarButtonItem!
-    @IBOutlet weak var canvasView: PKCanvasView!
+    @IBOutlet weak var pencilFingerButton: UIBarButtonItem! //pencil o dito
+    @IBOutlet weak var canvasView: PKCanvasView! //lavagna
     
-    @IBOutlet weak var recNum: UILabel!
+    @IBOutlet weak var recNum: UILabel! //risultato
     
-    let context = CIContext()
-    var pixelBuffer: CVPixelBuffer?
     var requests = [VNRequest]() // holds Image Classification Request
     
-    var drawing = PKDrawing()
-    let toolPicker = PKToolPicker.init()
+    var drawing = PKDrawing() //contiene il disegno
+    let toolPicker = PKToolPicker.init() //barra dei pennelli
 
     
-    override func viewDidAppear(_ animated: Bool) {
+    override func viewDidAppear(_ animated: Bool) { //funzione triggerata quando appare la pagina
         super.viewDidAppear(animated)
         
         canvasView.delegate = self
-        canvasView.drawing = drawing
+        canvasView.drawing = drawing //colleghiamo il disegno di PK alla lavagna
         
-        canvasView.alwaysBounceVertical = true
-        canvasView.drawingPolicy = .anyInput
-        canvasView.backgroundColor = .black
+        canvasView.drawingPolicy = .anyInput //possiamo disegnare sia con la pencil che con il dito
+        canvasView.backgroundColor = .black //imposto il colore della lavagna a nero
         
-        toolPicker.setVisible(true, forFirstResponder: canvasView)
-        toolPicker.addObserver(canvasView)
-        toolPicker.isRulerActive = false
-        toolPicker.selectedTool = PKInkingTool(.marker, color: .white, width: 30)
+        toolPicker.setVisible(true, forFirstResponder: canvasView) //il toolPicker è visibile solo in presenza della canvasView
+        toolPicker.addObserver(canvasView) //il toolPicker controlla se c'è la canvasView
+        toolPicker.selectedTool = PKInkingTool(.marker, color: .white, width: 30) //impostiamo il pennello di default
         
-        canvasView.becomeFirstResponder()
+        canvasView.becomeFirstResponder() //la canvasView comunica al toolPicker di essere attiva
     }
     
-    override func viewDidLoad() {
+    override func viewDidLoad() { //funzione triggerata quando si carica la pagina
         super.viewDidLoad()
-        setupVision()
+        setupVision() //configura vision
     }
     
-    override var prefersHomeIndicatorAutoHidden: Bool {
-        return true
-    }
-    
-    @IBAction func toggleFingerOrPencil (_ sender: Any) {
+    @IBAction func toggleFingerOrPencil (_ sender: Any) { //cambia il mezzo con cui disegnare
         if canvasView.drawingPolicy == .anyInput {
             canvasView.drawingPolicy = .pencilOnly
+            pencilFingerButton.title = "Pencil"
         }
         else {
             canvasView.drawingPolicy = .anyInput
+            pencilFingerButton.title = "Finger"
         }
-        pencilFingerButton.title = canvasView.drawingPolicy == .anyInput ? "Finger" : "Pencil"
     }
     
     func setupVision() {
-        // load MNIST model for the use with the Vision framework
-        guard let visionModel = try? VNCoreMLModel(for: MNISTClassifier(configuration: MLModelConfiguration()).model) else {fatalError("can not load Vision ML model")}
         
-        // create a classification request and tell it to call handleClassification once its done
-        let classificationRequest = VNCoreMLRequest(model: visionModel, completionHandler: self.handleClassification)
+        guard let visionModel = try? VNCoreMLModel(for: MNISTClassifier(configuration: MLModelConfiguration()).model) else {fatalError("can not load Vision ML model")}  //assegniamo il modello di riconoscimento numeri al visionModel
         
-        self.requests = [classificationRequest] // assigns the classificationRequest to the global requests array
+        let classificationRequest = VNCoreMLRequest(model: visionModel, completionHandler: self.handleClassification) //impostiamo una richiesta per il visionModel affinché, quando gli passiamo il disegno, esso richiami la funzione "handleClassification"
+        
+        self.requests = [classificationRequest] //assegna la richiesta a requests in forma di array
         
     }
     
     func handleClassification (request:VNRequest, error:Error?) {
-        guard let observations = request.results else {print("no results"); return}
+        guard let observations = request.results else {print("no results"); return} //recupero i risultati della richiesta fatta al visionModel
         
         // process the ovservations
         let classifications = observations
@@ -84,14 +74,13 @@ class ViewController: UIViewController, PKCanvasViewDelegate, PKToolPickerObserv
             .map({$0.identifier}) // only choose the identifier string to be placed into the classifications array
         
         DispatchQueue.main.async {
-            self.recNum.text = classifications.first // update the UI with the classification
+            self.recNum.text = classifications.first // update the UI results with the classification
         }
         
     }
     
-    @IBAction func saveDrawingToCameraRoll(_ sender: Any) {
+    @IBAction func recognizeNumber(_ sender: Any) {
         UIGraphicsBeginImageContextWithOptions(canvasView.bounds.size, false, UIScreen.main.scale)
-        
         
         canvasView.drawHierarchy(in: canvasView.bounds, afterScreenUpdates: true)
         
@@ -100,12 +89,12 @@ class ViewController: UIViewController, PKCanvasViewDelegate, PKToolPickerObserv
         
         
         if image != nil {
-            let scaledImage = scaleImage(image: image!, toSize: CGSize(width: 28, height: 28))
+            let scaledImage = scaleImage(image: image!, toSize: CGSize(width: 28, height: 28)) //ridimensioniamo il disegno
             
-            let imageRequestHandler = VNImageRequestHandler(cgImage: scaledImage.cgImage!, options: [:]) // create a handler that should perform the vision request
+            let imageRequestHandler = VNImageRequestHandler(cgImage: scaledImage.cgImage!, options: [:]) // creiamo il gestore della richiesta, passandogli il disegno ridimensionato
             
             do {
-                try imageRequestHandler.perform(self.requests)
+                try imageRequestHandler.perform(self.requests) //attiviamo il gestore della richiesta affinché passi l'immagine al visionModel
             }catch{
                 print(error)
             }

@@ -35,10 +35,10 @@
                     <navigationItem key="navigationItem" id="SAe-CP-pQA">
                         <barButtonItem key="leftBarButtonItem" title="Recognize" id="mNi-Uv-Z6M">
                             <connections>
-                                <action selector="saveDrawingToCameraRoll:" destination="BYZ-38-t0r" id="Onq-iQ-Cl3"/>
+                                <action selector="recognizeNumber:" destination="BYZ-38-t0r" id="AwJ-hJ-Otm"/>
                             </connections>
                         </barButtonItem>
-                        <barButtonItem key="rightBarButtonItem" title="Pencil" id="8l1-Om-wuq">
+                        <barButtonItem key="rightBarButtonItem" title="Finger" id="8l1-Om-wuq">
                             <connections>
                                 <action selector="toggleFingerOrPencil:" destination="BYZ-38-t0r" id="lJe-lI-n5Y"/>
                             </connections>
