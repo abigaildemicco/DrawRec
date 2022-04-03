@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		514B76D227F898C900336650 /* MNIST.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 514B76D127F898C900336650 /* MNIST.mlmodel */; };
 		5193E4F127EA126C0010633D /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5193E4F027EA126C0010633D /* AppDelegate.swift */; };
 		5193E4F327EA126C0010633D /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5193E4F227EA126C0010633D /* SceneDelegate.swift */; };
 		5193E4F527EA126C0010633D /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5193E4F427EA126C0010633D /* ViewController.swift */; };
@@ -18,7 +17,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		514B76D127F898C900336650 /* MNIST.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = MNIST.mlmodel; sourceTree = "<group>"; };
 		5193E4ED27EA126C0010633D /* DrawRec.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DrawRec.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		5193E4F027EA126C0010633D /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		5193E4F227EA126C0010633D /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -68,7 +66,6 @@
 				5193E4FB27EA126D0010633D /* LaunchScreen.storyboard */,
 				5193E4FE27EA126D0010633D /* Info.plist */,
 				51A6CB3427EB767300D88948 /* MNISTClassifier.mlpackage */,
-				514B76D127F898C900336650 /* MNIST.mlmodel */,
 			);
 			path = DrawRec;
 			sourceTree = "<group>";
@@ -147,7 +144,6 @@
 				5193E4F527EA126C0010633D /* ViewController.swift in Sources */,
 				51A6CB3527EB767300D88948 /* MNISTClassifier.mlpackage in Sources */,
 				5193E4F127EA126C0010633D /* AppDelegate.swift in Sources */,
-				514B76D227F898C900336650 /* MNIST.mlmodel in Sources */,
 				5193E4F327EA126C0010633D /* SceneDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
