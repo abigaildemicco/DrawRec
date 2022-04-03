@@ -9,6 +9,7 @@ import UIKit
 import PencilKit
 import PhotosUI
 import Vision
+import CoreML
 
 class ViewController: UIViewController, PKCanvasViewDelegate, PKToolPickerObserver {
     
@@ -20,6 +21,7 @@ class ViewController: UIViewController, PKCanvasViewDelegate, PKToolPickerObserv
     let canvasWidth: CGFloat = 414
     let context = CIContext()
     var pixelBuffer: CVPixelBuffer?
+    var requests = [VNRequest]() // holds Image Classification Request
     
     var drawing = PKDrawing()
     let toolPicker = PKToolPicker.init()
@@ -33,25 +35,20 @@ class ViewController: UIViewController, PKCanvasViewDelegate, PKToolPickerObserv
         
         canvasView.alwaysBounceVertical = true
         canvasView.drawingPolicy = .anyInput
+        canvasView.backgroundColor = .black
         
         toolPicker.setVisible(true, forFirstResponder: canvasView)
         toolPicker.addObserver(canvasView)
         toolPicker.isRulerActive = false
+        toolPicker.selectedTool = PKInkingTool(.marker, color: .white, width: 30)
         
         canvasView.becomeFirstResponder()
-        
     }
     
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-
-        let canvasScale = canvasView.bounds.width / canvasWidth
-        canvasView.minimumZoomScale = canvasScale
-        canvasView.maximumZoomScale = canvasScale
-        canvasView.zoomScale = canvasScale
-        canvasView.contentOffset = CGPoint(x: 0, y: -canvasView.adjustedContentInset.top)
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupVision()
     }
-    
     
     override var prefersHomeIndicatorAutoHidden: Bool {
         return true
@@ -67,6 +64,32 @@ class ViewController: UIViewController, PKCanvasViewDelegate, PKToolPickerObserv
         pencilFingerButton.title = canvasView.drawingPolicy == .anyInput ? "Finger" : "Pencil"
     }
     
+    func setupVision() {
+        // load MNIST model for the use with the Vision framework
+        guard let visionModel = try? VNCoreMLModel(for: MNISTClassifier(configuration: MLModelConfiguration()).model) else {fatalError("can not load Vision ML model")}
+        
+        // create a classification request and tell it to call handleClassification once its done
+        let classificationRequest = VNCoreMLRequest(model: visionModel, completionHandler: self.handleClassification)
+        
+        self.requests = [classificationRequest] // assigns the classificationRequest to the global requests array
+        
+    }
+    
+    func handleClassification (request:VNRequest, error:Error?) {
+        guard let observations = request.results else {print("no results"); return}
+        
+        // process the ovservations
+        let classifications = observations
+            .compactMap({$0 as? VNClassificationObservation}) // cast all elements to VNClassificationObservation objects
+            .filter({$0.confidence > 0.8}) // only choose observations with a confidence of more than 80%
+            .map({$0.identifier}) // only choose the identifier string to be placed into the classifications array
+        
+        DispatchQueue.main.async {
+            self.recNum.text = classifications.first // update the UI with the classification
+        }
+        
+    }
+    
     @IBAction func saveDrawingToCameraRoll(_ sender: Any) {
         UIGraphicsBeginImageContextWithOptions(canvasView.bounds.size, false, UIScreen.main.scale)
         
@@ -78,26 +101,26 @@ class ViewController: UIViewController, PKCanvasViewDelegate, PKToolPickerObserv
         
         
         if image != nil {
-                        // load our CoreML Pokedex model
-           guard let model = try? MNISTClassifier(configuration: MLModelConfiguration()) else {fatalError("can not load Vision ML model")}
+            let scaledImage = scaleImage(image: image!, toSize: CGSize(width: 28, height: 28))
             
-                        let ciImage = CIImage(image: image!) //converto UIimage in CIImage
-                        let attrs = [kCVPixelBufferCGImageCompatibilityKey: kCFBooleanTrue,
-                                             kCVPixelBufferCGBitmapContextCompatibilityKey: kCFBooleanTrue] as CFDictionary
-                                CVPixelBufferCreate(kCFAllocatorDefault,
-                                                    28,
-                                                    28,
-                                                    kCVPixelFormatType_OneComponent8,
-                                                    attrs,
-                                                    &pixelBuffer)
-                        context.render(ciImage!, to: pixelBuffer!) //converto CIImage in CVPixelBuffer
-                        guard let output = try? model.prediction(image: pixelBuffer!) else { //avviene il confronto tra il disegno e il dataset
-                            fatalError("Unexpected runtime error.")
-                        }
+            let imageRequestHandler = VNImageRequestHandler(cgImage: scaledImage.cgImage!, options: [:]) // create a handler that should perform the vision request
             
-                        let recognizedNumb = output.classLabel
-                self.recNum.text = "\(recognizedNumb)"
+            do {
+                try imageRequestHandler.perform(self.requests)
+            }catch{
+                print(error)
+            }
         }
     }
+    
+    // scales any UIImage to a desired target size
+    func scaleImage (image:UIImage, toSize size:CGSize) -> UIImage {
+        UIGraphicsBeginImageContextWithOptions(size, false, 1.0)
+        image.draw(in: CGRect(x: 0, y: 0, width: size.width, height: size.height))
+        let newImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        return newImage!
+    }
+    
 }
 
